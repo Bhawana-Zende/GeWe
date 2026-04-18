@@ -1,0 +1,367 @@
+# Demo Data Setup Guide
+# Quick Start for gewe Mock Data
+
+**Time to Setup:** 2 minutes
+**For:** CTO Liu (implementation) + Lue (reference)
+
+---
+
+## 📁 File Location
+
+Copy `mockData.js` to your React project:
+
+```
+gewe-frontend/
+└── src/
+    └── data/
+        └── mockData.js  ← Copy the file here
+```
+
+---
+
+## 🚀 Quick Start (3 Steps)
+
+### Step 1: Create the data folder
+```bash
+cd gewe-frontend/src
+mkdir data
+# Copy mockData.js into this folder
+```
+
+### Step 2: Import in your components
+
+**Dashboard.jsx:**
+```javascript
+import { mockPatients, getAllPatients } from '../data/mockData';
+
+function Dashboard() {
+  const [patients, setPatients] = useState([]);
+  
+  useEffect(() => {
+    // Option A: Use directly (instant)
+    setPatients(mockPatients);
+    
+    // Option B: Simulate API call with delay (more realistic)
+    getAllPatients().then(data => {
+      setPatients(data.patients);
+    });
+  }, []);
+  
+  return (
+    <div>
+      {patients.map(patient => (
+        <PatientCard key={patient.id} patient={patient} />
+      ))}
+    </div>
+  );
+}
+```
+
+**PatientView.jsx:**
+```javascript
+import { getPatientWithDetails } from '../data/mockData';
+import { useParams } from 'react-router-dom';
+
+function PatientView() {
+  const { id } = useParams();
+  const [patient, setPatient] = useState(null);
+  
+  useEffect(() => {
+    getPatientWithDetails(id).then(data => {
+      setPatient(data);
+    });
+  }, [id]);
+  
+  if (!patient) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <h1>{patient.name}</h1>
+      {/* Display patient details */}
+    </div>
+  );
+}
+```
+
+### Step 3: Test it works
+```bash
+npm run dev
+# Open http://localhost:5173
+# You should see 4 patients in the dashboard
+```
+
+---
+
+## 📊 What's Included
+
+### **1. Dashboard Data** (`mockPatients`)
+4 patients with different supply statuses:
+- Sarah Martinez - 🟢 Ordered (arrives soon)
+- Robert Chen - 🟡 Pending Signature
+- Mary Johnson - 🔵 Ready to Order
+- John Doe - ✅ Delivered
+
+**Usage:**
+```javascript
+import { mockPatients } from '../data/mockData';
+
+mockPatients.forEach(p => console.log(p.name));
+```
+
+---
+
+### **2. Patient Details** (`mockPatientDetails`)
+Complete patient records with:
+- Demographics (name, age, address)
+- Medical info (diagnosis, summary)
+- CMS-485 form (physician signature, supplies)
+- Supply order (if exists)
+
+**Usage:**
+```javascript
+import { getPatientDetail } from '../data/mockData';
+
+const patient = getPatientDetail('pat_001');
+console.log(patient.cms_485.supplies); // Array of supplies
+```
+
+---
+
+### **3. Tracking Timeline** (`mockTrackingTimeline`)
+Order tracking steps for visualization:
+- Order Confirmed ✓
+- Order Shipped ✓
+- Out for Delivery ✓
+- Order Delivered (pending)
+
+**Usage:**
+```javascript
+import { getTrackingTimeline } from '../data/mockData';
+
+const timeline = getTrackingTimeline('ord_001');
+timeline.steps.forEach(step => {
+  console.log(`${step.label}: ${step.completed ? '✓' : '○'}`);
+});
+```
+
+---
+
+### **4. Carstock Inventory** (`mockCarstock`)
+Clinician's trunk supplies:
+- Gauze pads: 45 units
+- Saline: 12 bottles
+- Medical tape: 8 rolls
+- Gloves: 180 units
+
+**Usage:**
+```javascript
+import { mockCarstock } from '../data/mockData';
+
+const lowStock = mockCarstock.filter(item => item.low_stock);
+```
+
+---
+
+### **5. Voice Log Example** (`mockVoiceLog`)
+Pre-filled voice transcript for demo:
+"I used 5 gauze pads, 2 saline bottles..."
+
+**Usage:**
+```javascript
+import { mockVoiceLog } from '../data/mockData';
+
+console.log(mockVoiceLog.transcript);
+console.log(mockVoiceLog.parsed_items); // Structured data
+```
+
+---
+
+## 🎯 Common Use Cases
+
+### **Get All Patients (Dashboard)**
+```javascript
+import { getAllPatients } from '../data/mockData';
+
+// Async with simulated delay (300ms)
+const data = await getAllPatients();
+console.log(data.patients); // Array of 4 patients
+```
+
+---
+
+### **Get One Patient (Detail View)**
+```javascript
+import { getPatientWithDetails } from '../data/mockData';
+
+// Async with simulated delay (300ms)
+const patient = await getPatientWithDetails('pat_001');
+console.log(patient.name); // "Sarah Martinez"
+console.log(patient.cms_485.supplies); // Array of 6 supplies
+```
+
+---
+
+### **Create Supply Order (Approval Flow)**
+```javascript
+import { createMockSupplyOrder } from '../data/mockData';
+
+// Simulate placing an order
+const order = await createMockSupplyOrder('pat_001');
+console.log(order.supplier.tracking_number); // "1Z999AA10123456784"
+```
+
+---
+
+### **Check Doctor Signature Status**
+```javascript
+const patient = getPatientDetail('pat_003');
+const canOrder = patient.cms_485.physician.signed;
+
+if (canOrder) {
+  // Show "Approve & Order" button
+} else {
+  // Show "Waiting for signature"
+}
+```
+
+---
+
+## 🎨 Demo Flow Example
+
+**Full user journey in code:**
+
+```javascript
+// 1. Load dashboard
+const { patients } = await getAllPatients();
+// Shows: Sarah, Robert, Mary, John
+
+// 2. User clicks on Mary Johnson (Ready to Order)
+const mary = await getPatientWithDetails('pat_003');
+// Shows: Full details, 5 supplies, doctor signed ✓
+
+// 3. User clicks "Approve & Order Supplies"
+const newOrder = await createMockSupplyOrder('pat_003');
+// Returns: New order with tracking number
+
+// 4. User views tracking
+const tracking = getTrackingTimeline(newOrder.id);
+// Shows: Timeline with 4 steps
+```
+
+---
+
+## 🔧 Customization
+
+### **Change Patient Names**
+```javascript
+// In mockData.js
+export const mockPatients = [
+  {
+    id: "pat_001",
+    name: "Your Custom Name", // ← Change here
+    // ... rest stays same
+  }
+];
+```
+
+### **Adjust Supply Quantities**
+```javascript
+// In mockPatientDetails
+supplies: [
+  {
+    name: "Gauze Pads",
+    quantity: 100, // ← Change quantity
+    unit: "pads"
+  }
+]
+```
+
+### **Change Dates**
+```javascript
+// Use relative dates for demo day
+const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+nextVisit: tomorrow.toISOString().split('T')[0] // "2024-03-19"
+```
+
+---
+
+## ⚠️ Important Notes
+
+### **For Demo Day:**
+
+1. **No API calls needed** - All data is local
+2. **Instant loading** - Or use built-in delay() function
+3. **Predictable** - Same data every time
+4. **No internet required** - Works offline
+
+### **Pre-load Data:**
+```javascript
+// In App.jsx or main.jsx
+import { mockPatients } from './data/mockData';
+
+// Store in React Context or state on app load
+const [patients] = useState(mockPatients);
+```
+
+### **Error Handling:**
+```javascript
+// All get functions return null if not found
+const patient = getPatientDetail('pat_999'); // null
+if (!patient) {
+  // Show error or redirect
+}
+```
+
+---
+
+## 🎬 Demo Script Integration
+
+**Match with DEMO_SCRIPT.md:**
+
+1. **Dashboard Scene** → Use `mockPatients`
+2. **Patient Detail** → Use `getPatientDetail('pat_001')`
+3. **Approval Flow** → Use `createMockSupplyOrder()`
+4. **Tracking** → Use `getTrackingTimeline('ord_001')`
+5. **Voice Log** → Use `mockVoiceLog`
+
+---
+
+## 📱 Mobile Testing
+
+**Test on real device:**
+```bash
+# Find your local IP
+ipconfig getifaddr en0  # Mac
+ip addr show  # Linux
+ipconfig  # Windows
+
+# Access from phone
+http://192.168.1.XXX:5173
+```
+
+The mock data works exactly the same on mobile!
+
+---
+
+## ✅ Quick Verification
+
+**Run this in browser console after loading:**
+```javascript
+import { mockPatients } from './data/mockData';
+console.log(mockPatients.length); // Should print: 4
+console.log(mockPatients[0].name); // Should print: "Sarah Martinez"
+```
+
+---
+
+## 🚀 You're Ready!
+
+The mock data is **production-ready** for your demo. Just:
+1. Copy `mockData.js` to `src/data/`
+2. Import what you need
+3. Build your components
+
+**No backend, no API, no complexity** - just works! 🎉
